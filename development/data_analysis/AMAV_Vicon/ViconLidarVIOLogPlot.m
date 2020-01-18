@@ -16,13 +16,13 @@ filepath3 = [path3 file3];
 data3 = csvread(filepath3);
 
 % parse out
-SubjectName = data3(:,1);
+SubjectIndex = data3(:,1);
 
 TimeVicon = data3(:,2);
 
-PositionXVicon = data3(:,3);
-PositionYVicon = data3(:,4);
-PositionZVicon = data3(:,5);
+PositionXVicon = data3(:,3)/1000;
+PositionYVicon = data3(:,4)/1000;
+PositionZVicon = data3(:,5)/1000;
 
 OrientationPhiVicon = data3(:,6);
 OrientationThetaVicon = data3(:,7);
@@ -40,5 +40,6 @@ ylabel('Position Y (m)');
 zlabel('Position Z (m)');
 legend('Vicon (Ground Truth)', 'Realsense T265');
 set(gca, 'FontSize', 16);
+axis equal
 grid on 
 hold off

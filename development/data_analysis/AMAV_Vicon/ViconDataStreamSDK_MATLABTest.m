@@ -16,24 +16,26 @@ clear
 clc
 
 % %% ROS 
-% ROS_Master_ip = '192.168.1.108';
+% ROS_Master_ip = 'http://192.168.1.108:11311';
 % 
 % if(~robotics.ros.internal.Global.isNodeActive)
 %     rosinit(ROS_Master_ip);
 % end
-% 
+
 % % Subscribers
-% VIODataSubscriber = rossubscriber('camera/odom/sample', 'nav_msgs/Odometry');
-% 
+% VIODataSubscriber = rossubscriber('/camera/odom/sample', 'nav_msgs/Odometry');
+% LidarSubscriber = rossubscriber('/mavros/distance_sensor/hrlv_ez4_pub');
 % 
 % % Lastest Message
 % VIOMsg = VIODataSubscriber.LatestMessage;
-% 
-% r = robotics.Rate(100);
-% reset(r);
+% LidarMsg = LidarSubscriber.LatestMessage;
+
+r = robotics.Rate(100);
+reset(r);
 
 %% Logging Vicon Data Stream and ROS Messages
 
+firstIteration = true;
 % Setup Logging Location
 dateString = datestr(now,'mmmm_dd_yyyy_HH_MM_SS_FFF');
 ViconLog = ['C:\Users\Vicon User\Documents\AMAV\Terpcopter5.0\development\data_analysis\AMAV_Vicon\ViconVIOLidarLogs' '/Vicon_' dateString '.log'];
@@ -439,11 +441,30 @@ while ishandle( MessageBox )
                          Output_GetSegmentLocalRotationEulerXYZ.Rotation( 2 ),       ...
                          Output_GetSegmentLocalRotationEulerXYZ.Rotation( 3 ),       ...
                          AdaptBool( Output_GetSegmentLocalRotationEulerXYZ.Occluded ) );
-% 
-%       VIOMsg = VIOData               
+
+%       VIOMsg = VIODataSubscriber.LatestMessage
+%       LidarMsg = LidarSubscriber.LatestMessage;
+%       
+%       % Intel Realsense VIO Pose
+%       % Position
+%       VIOPositionX = VIOMsg.Pose.Pose.Position.X;
+%       VIOPositionY = VIOMsg.Pose.Pose.Position.Y;
+%       VIOPositionZ = VIOMsg.Pose.Pose.Position.Z;
+%       
+%       % Orientation
+%       VIOOrientationX = VIOMsg.Pose.Pose.Orientation.X;
+%       VIOOrientationY = VIOMsg.Pose.Pose.Orientation.Y;
+%       VIOOrientationZ = VIOMsg.Pose.Pose.Orientation.Z;
+%       VIOOrientationW = VIOMsg.Pose.Pose.Orientation.W;
+%       
+%   
+%       % Lidar
+%       LidarRange = LidarMsg.Range;
       
       [pFile1, msg] = fopen(ViconLog, 'a');
 %       [pFile2, msg] = fopen(VIOLog, 'a');
+%       pFile3 = fopen(LidarLog, 'a');
+      
       if pFile1 < 0
           error('Failed to open file "%s" for writing, because "%s"', ViconLog, msg);
       end
@@ -461,17 +482,30 @@ while ishandle( MessageBox )
       timeSec = time(4)*3600 + time(5)*60 + time(6);
       time = timeSec - timeStartSec;
       
-      fprintf(pFile1, '%s,',SubjectName);
-      fprintf(pFile1, '%6.6f,', time);
-      fprintf(pFile1, '%6.6f,', X);
-      fprintf(pFile1, '%6.6f,', Y);
-      fprintf(pFile1, '%6.6f,', Z);
-      fprintf(pFile1, '%6.6f,', phi);
-      fprintf(pFile1, '%6.6f,', theta);
-      fprintf(pFile1, '%6.6f\n', psi);
+      if(firstIteration)
+          firstIteration = false;
+          continue;
+      else
+          fprintf(pFile1, '%f,',SubjectIndex);
+          fprintf(pFile1, '%6.6f,', time);
+          fprintf(pFile1, '%6.6f,', X);
+          fprintf(pFile1, '%6.6f,', Y);
+          fprintf(pFile1, '%6.6f,', Z);
+          fprintf(pFile1, '%6.6f,', phi);
+          fprintf(pFile1, '%6.6f,', theta);
+          fprintf(pFile1, '%6.6f\n', psi);
+          
+%           
+%           fprintf(pFile2, '%6.6f,', VIOPositionX);
+%           fprintf(pFile2, '%6.6f,', VIOPositionY);
+%           fprintf(pFile2, '%6.6f\n', VIOPositionZ);
+%           
+%           fprintf(pFile3, '%6.6f\n', LidarRange);
+      end
       
       fclose(pFile1);
-    
+%       fclose(pFile2);
+%       fclose(pFile3);
     
     end% SegmentIndex
 
@@ -606,6 +640,7 @@ while ishandle( MessageBox )
     end% CameraIndex
   end% bReadCentroids
 
+  waitfor(r);
 end% while true  
 
 if TransmitMulticast
