@@ -34,7 +34,7 @@ if(~robotics.ros.internal.Global.isNodeActive)
     rosinit;
 end
 
-useLidarFlag = 0;
+useLidarFlag = 1;
 
 % Subscribers
 imuDataSubscriber = rossubscriber('/mavros/imu/data');
@@ -76,7 +76,7 @@ imuMsg = imuDataSubscriber.LatestMessage;
 if useLidarFlag
     lidarMsg = lidarDataSubscriber.LatestMessage;
 end
-VIOMsg = VIODataSubscriber.LatestMessage;
+VIOMsg = VIODataSubscriber.LatestMessage
 localPositionOdomMsg = localPositionOdomSubscriber.LatestMessage;
 % ARTagMsg = ARTagSubscriber.LatestMessage;
 
@@ -157,12 +157,12 @@ localPositionPhi = rad2deg(localPositionEuler(3));
 
 logFlag = 1;
 dateString = datestr(now,'mmmm_dd_yyyy_HH_MM_SS_FFF');
-VIOLog = ['/home/amav/amav/Terpcopter3.0/matlab/estimation/EstimationLogs' '/VIO_' dateString '.log'];
-localPositionLog = ['/home/amav/amav/Terpcopter3.0/matlab/estimation/EstimationLogs' '/localPosition_' dateString '.log'];
+VIOLog = ['/home/amav/Terpcopter5.0/development/data_analysis/Navigation' '/VIO_' dateString '.log'];
+localPositionLog = ['/home/amav/Terpcopter5.0/development/data_analysis/Navigation' '/localPosition_' dateString '.log'];
 if useLidarFlag
-    lidarLog = ['/home/amav/amav/Terpcopter3.0/matlab/estimation/EstimationLogs' '/lidar_' dateString '.log'];
+    lidarLog = ['/home/amav/Terpcopter5.0/development/data_analysis/Navigation' '/lidar_' dateString '.log'];
 end
-stateEstimateLog = ['/home/amav/amav/Terpcopter3.0/matlab/estimation/EstimationLogs' '/stateEstimate_' dateString '.log'];
+stateEstimateLog = ['/home/amav/Terpcopter5.0/development/data_analysis/Navigation' '/stateEstimate_' dateString '.log'];
 % WaypointLog = ['~/Terpcopter4.0/Logs/Waypoint_logs' '/WaypointLog_' dateString '.log'];
 tic
 
@@ -192,7 +192,6 @@ while(1)
     end
     VIOMsg = VIODataSubscriber.LatestMessage;
     localPositionOdomMsg = localPositionOdomSubscriber.LatestMessage;
-    
     
     %% Pixhawk IMU
     if isempty(imuMsg)
@@ -322,7 +321,7 @@ while(1)
     localPositionTheta = rad2deg(localPositionEuler(2));
     localPositionPhi = rad2deg(localPositionEuler(3));
     
-    % VIO Twist
+    % Local Postion Twist
     localPositionTwistLinearVelocityX = localPositionOdomMsg.Twist.Twist.Linear.X;
     localPositionTwistLinearVelocityY = localPositionOdomMsg.Twist.Twist.Linear.Y;
     localPositionTwistLinearVelocityZ = localPositionOdomMsg.Twist.Twist.Linear.Z;

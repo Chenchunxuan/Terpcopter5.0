@@ -52,7 +52,7 @@ function Master_GUI_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to Master_GUI (see VARARGIN)
 global pathToMatlabRoot pathToGUI pathToGUIScripts
-pathToGUI = '/home/amav/Terpcopter4.0/offboard/user_interface';
+pathToGUI = '/home/amav/Terpcopter5.0/offboard/user_interface';
 
 cd(pathToGUI)
 % addpath('../');
@@ -61,7 +61,7 @@ pathToMatlabRoot = params.env.matlabRoot;
 pathToGUIScripts = [params.env.matlabRoot '/user_interface/scripts'];
 
 if(~robotics.ros.internal.Global.isNodeActive)
-    rosinit('192.168.1.3');
+    rosinit('192.168.1.108');
 end
 % Choose default command line output for Master_GUI
 handles.output = hObject;
