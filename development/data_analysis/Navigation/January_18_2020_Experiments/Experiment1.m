@@ -17,7 +17,7 @@ plotLidar = 0;
 plotVIO = 0;
 plotLocalPosition = 1;
 plotStateEstimate = 0;
-plotVicon = 1;
+plotVicon = 0;
 
 %% Correcting Offset
 % If the Vicon initial takeoff is 3 seconds ahead of the local position
@@ -178,7 +178,7 @@ if plotVicon
 end
 xlabel('Time (seconds)');
 ylabel('Position Z (meters)');
-title('Position Z Comparision Between EKF (Barometer Only) and Vicon')
+title('Position Z Comparision Between EKF:Range Sensor(Barometer Only) and Vicon')
 legend('Local Position (EKF)','Vicon Motion Capture');
 grid on
 set(gca, 'FontSize', 12);

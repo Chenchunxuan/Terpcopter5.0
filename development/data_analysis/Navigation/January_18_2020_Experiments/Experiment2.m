@@ -34,7 +34,7 @@ plotVicon = 1;
 % 
 % ex. ViconTimeOffset = -3.1; shifts the vicon data back 3.1 seconds
 %     ViconTimeOffset = 12.9; shifts the vicon data forward 12.9 seconds
-ViconTimeOffset = -4.8; 
+ViconTimeOffset = -4.8 + 7; 
 
 %% Load Navigation csv files
 pathToNavigationLogs = '/home/amav/Terpcopter5.0/development/data_analysis/Navigation';
@@ -188,9 +188,7 @@ hold off
 figure(2)
 hold on
 plot(TimeLocalPosition, PositionZLidar);
-plot(TimeLocalPosition, PositionZLocalPosition);
 plot(TimeLocalPosition, PositionZVIOBodyFrame);
-plot(TimeVicon, PositionZVicon);
 xlabel('Time (seconds)');
 ylabel('Position Z (meters)');
 title('Position Z Comparision Between Raw Lidar and Intel Realsense T265');
