@@ -34,7 +34,7 @@ plotVicon = 1;
 % 
 % ex. ViconTimeOffset = -3.1; shifts the vicon data back 3.1 seconds
 %     ViconTimeOffset = 12.9; shifts the vicon data forward 12.9 seconds
-ViconTimeOffset = -4.8 + 7; 
+ViconTimeOffset = -4.8; %+ 7; 
 
 %% Load Navigation csv files
 pathToNavigationLogs = '/home/amav/Terpcopter5.0/development/data_analysis/Navigation';

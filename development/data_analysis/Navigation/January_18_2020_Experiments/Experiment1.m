@@ -17,7 +17,7 @@ plotLidar = 0;
 plotVIO = 0;
 plotLocalPosition = 1;
 plotStateEstimate = 0;
-plotVicon = 0;
+plotVicon = 1;
 
 %% Correcting Offset
 % If the Vicon initial takeoff is 3 seconds ahead of the local position

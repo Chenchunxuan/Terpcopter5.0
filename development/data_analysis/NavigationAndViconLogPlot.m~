@@ -1,22 +1,4 @@
 %%
-% Experiment #4 
-% Description: Experiment #4 assumes that the Realsense T265 and Lidar are
-%              both working and are fused. This file plots the Local
-%              Position (EKF2) response and compares it with respect to the
-%              Vicon Motion Capture System. We essentially want to
-%              understand how the Realsense and Lidar contributes to the 
-%              EKF2. 
-% Plots: 
-%    Figure 1: Compares Raw Lidar with Vicon Motion Capture System
-%    Figure 2: Compares Raw Lidar with Raw Realsense T265
-%    Figure 3: Compares Raw Realsense T265 with Vicon Motion Capture System
-% 
-%    Figure 4: Compares EKF (Lidar + VIO + Barometer) with Vicon Motion Capture
-%    Figure 5: Compares EKF (Lidar + VIO + Barometer) with VIO
-%    Figure 6: Compares EKF (Lidar + VIO + Barometer) with Lidar
-%
-%    Figure 7: Compares EKF (Lidar + VIO + Barometer) with Everything
-%%
 % Plotting both the Realsense VIO and the Motion Capture 
 clear;
 close all;
@@ -246,7 +228,7 @@ hold off
 % set(gca, 'FontSize', 12);
 % hold off
 
-figure(7)
+figure(1)
 hold on
 if plotLidar
     plot(TimeLocalPosition, PositionZLidar);
@@ -262,8 +244,42 @@ if plotVicon
 end
 xlabel('Time (seconds)');
 ylabel('Position Z (meters)');
-title('Position Z Comparision Between EKF: Vision (Lidar + VIO + Barometer) and Realsense/Vicon')
-legend('Lidar','Local Position (EKF)','Intel Realsense T265','Vicon Motion Capture');
+
+if (plotLidar && plotLocalPosition && plotVIO && plotVicon)
+    title('Position Z Comparision Between EKF and Lidar/Realsense/Vicon')
+    legend('Lidar','Local Position (EKF)','Intel Realsense T265','Vicon Motion Capture');
+elseif (~plotLidar && plotLocalPosition && ~plotVIO && plotVicon)
+    title('Position Z Comparision Between EKF and Vicon')
+    legend('Local Position (EKF)','Vicon Motion Capture');
+elseif (~plotLidar && ~plotLocalPosition && plotVIO && plotVicon)
+    title('Position Z Comparision Between Realsense and Vicon')
+    legend('Intel Realsense T265','Vicon Motion Capture');
+elseif (~plotLidar && plotLocalPosition && plotVIO && ~plotVicon)
+    title('Position Z Comparision Between EKF and Realsense')
+    legend('Local Position (EKF)','Intel Realsense T265');
+elseif (~plotLidar && plotLocalPosition && plotVIO && plotVicon)
+    title('Position Z Comparision Between EKF, Realsense and Vicon')
+    legend('Local Position (EKF)','Intel Realsense T265','Vicon Motion Capture');
+elseif (plotLidar && ~plotLocalPosition && ~plotVIO && plotVicon)
+    title('Position Z Comparision Between Lidar and Vicon')
+    legend('Lidar','Vicon Motion Capture');
+elseif (plotLidar && plotLocalPosition && ~plotVIO && ~plotVicon)
+    title('Position Z Comparision Between Lidar and EKF')
+    legend('Lidar','Local Position (EKF)');
+elseif (plotLidar && plotLocalPosition && ~plotVIO && plotVicon)
+    title('Position Z Comparision Between EKF, Lidar and Vicon')
+    legend('Lidar','Local Position (EKF)','Vicon Motion Capture');
+elseif (plotLidar && ~plotLocalPosition && plotVIO && ~plotVicon)
+    title('Position Z Comparision Between Lidar and Realsense')
+    legend('Lidar','Intel Realsense T265');
+elseif (plotLidar && ~plotLocalPosition && plotVIO && plotVicon)
+    title('Position Z Comparision Between Lidar and Realsense/Vicon')
+    legend('Lidar','Local Position (EKF)','Intel Realsense T265','Vicon Motion Capture');
+elseif (plotLidar && plotLocalPosition && plotVIO && plotVicon)
+    title('Position Z Comparision Between EKF and Lidar/Realsense/Vicon')
+    legend('Lidar','Local Position (EKF)','Intel Realsense T265','Vicon Motion Capture');
+    
+end
 grid on
 set(gca, 'FontSize', 12);
 hold off

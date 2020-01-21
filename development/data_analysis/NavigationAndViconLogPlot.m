@@ -1,3 +1,4 @@
+%%
 % Plotting both the Realsense VIO and the Motion Capture 
 clear;
 close all;
@@ -16,7 +17,7 @@ plotVicon = 1;
 % 
 % ex. ViconTimeOffset = -3.1; shifts the vicon data back 3.1 seconds
 %     ViconTimeOffset = 12.9; shifts the vicon data forward 12.9 seconds
-ViconTimeOffset = -3.0; 
+ViconTimeOffset = 7.75; 
 
 %% Load Navigation csv files
 pathToNavigationLogs = '/home/amav/Terpcopter5.0/development/data_analysis/Navigation';
@@ -39,10 +40,10 @@ if plotLidar
 end
 
 % Local Position file
-if plotLocalPosition
+% if plotLocalPosition
     file3 = replaceBetween(file1,1,13,'localPosition');
     path3 = path1;
-end
+% end
 
 % VIO file
 if plotVIO
@@ -80,7 +81,7 @@ if plotLidar
 end
 
 %% Local Position
-if plotLocalPosition
+% if plotLocalPosition
     file3
     filepath3 = [path3 file3];
     data3 = csvread(filepath3);
@@ -102,7 +103,7 @@ if plotLocalPosition
     AngularVelocityXLocalPosition = data3(:,11);
     AngularVelocityYLocalPosition = data3(:,12);
     AngularVelocityZLocalPosition = data3(:,13);
-end
+% end
 
 %% Realsense VIO
 if plotVIO
@@ -147,31 +148,67 @@ if plotVicon
     PositionYVicon = data5(:,4)/1000;
     PositionZVicon = data5(:,5)/1000;
     
+    PositionZVicon = PositionZVicon - PositionZVicon(1);
+    
     OrientationPhiVicon = data5(:,6);
     OrientationThetaVicon = data5(:,7);
     OrientationPsiVicon = data5(:,8);
 end
 
 %%
-figure(4)
+figure(1)
 hold on
 if plotLidar
     plot(TimeLocalPosition, PositionZLidar);
 end
 if plotLocalPosition
-    plot(TimeLocalPosition,PositionZLocalPosition);
+    plot(TimeLocalPosition, PositionZLocalPosition);
 end
 if plotVIO
-    plot(TimeVIO, PositionZVIOBodyFrame);
+    plot(TimeLocalPosition, PositionZVIOBodyFrame);
 end
 if plotVicon
     plot(TimeVicon, PositionZVicon);
 end
-
 xlabel('Time (seconds)');
 ylabel('Position Z (meters)');
-title('Position Z vs Time Comparision for Local Position, Realsense VIO, and Lidar')
-legend('Lidar','Local Position (EKF)','Realsense VIO');
+
+if (plotLidar && plotLocalPosition && plotVIO && plotVicon)
+    title('Position Z Comparision Between EKF, Lidar, Realsense, and Vicon')
+    legend('Lidar','Local Position (EKF)','Intel Realsense T265','Vicon Motion Capture');
+elseif (~plotLidar && plotLocalPosition && ~plotVIO && plotVicon)
+    title('Position Z Comparision Between EKF and Vicon')
+    legend('Local Position (EKF)','Vicon Motion Capture');
+elseif (~plotLidar && ~plotLocalPosition && plotVIO && plotVicon)
+    title('Position Z Comparision Between Realsense and Vicon')
+    legend('Intel Realsense T265','Vicon Motion Capture');
+elseif (~plotLidar && plotLocalPosition && plotVIO && ~plotVicon)
+    title('Position Z Comparision Between EKF and Realsense')
+    legend('Local Position (EKF)','Intel Realsense T265');
+elseif (~plotLidar && plotLocalPosition && plotVIO && plotVicon)
+    title('Position Z Comparision Between EKF, Realsense and Vicon')
+    legend('Local Position (EKF)','Intel Realsense T265','Vicon Motion Capture');
+elseif (plotLidar && ~plotLocalPosition && ~plotVIO && plotVicon)
+    title('Position Z Comparision Between Lidar and Vicon')
+    legend('Lidar','Vicon Motion Capture');
+elseif (plotLidar && plotLocalPosition && ~plotVIO && ~plotVicon)
+    title('Position Z Comparision Between Lidar and EKF')
+    legend('Lidar','Local Position (EKF)');
+elseif (plotLidar && plotLocalPosition && ~plotVIO && plotVicon)
+    title('Position Z Comparision Between EKF, Lidar and Vicon')
+    legend('Lidar','Local Position (EKF)','Vicon Motion Capture');
+elseif (plotLidar && ~plotLocalPosition && plotVIO && ~plotVicon)
+    title('Position Z Comparision Between Lidar and Realsense')
+    legend('Lidar','Intel Realsense T265');
+elseif (plotLidar && ~plotLocalPosition && plotVIO && plotVicon)
+    title('Position Z Comparision Between Lidar, Realsense and Vicon')
+    legend('Lidar','Intel Realsense T265','Vicon Motion Capture');
+elseif (plotLidar && plotLocalPosition && plotVIO && ~plotVicon)
+    title('Position Z Comparision Between EKF, Lidar and Realsense')
+    legend('Lidar','Local Position (EKF)','Intel Realsense T265');
+else
+    disp('Unable to Label Title');
+end
 grid on
 set(gca, 'FontSize', 12);
 hold off
