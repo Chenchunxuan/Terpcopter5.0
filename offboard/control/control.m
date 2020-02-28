@@ -22,6 +22,10 @@ clear; close all; clc; format compact;
 addpath('../')
 params = loadParams();
 
+global prevTime x_error_int y_error_int
+x_error_int = 0.0;
+y_error_int = 0.0;
+
 global controlParams
 controlParams = params.ctrl;
 fprintf('Control Node Launching...\n');
@@ -35,6 +39,7 @@ end
 stateEstimateSubscriber = rossubscriber('/stateEstimate');
 ayprCmdSubscriber = rossubscriber('/ayprCmd');
 controlStartSubscriber = rossubscriber('/startControl', 'std_msgs/Bool');
+localPositionOdomSubscriber = rossubscriber('/mavros/local_position/odom', 'nav_msgs/Odometry');
 
 % Publishers
 stickCmdPublisher = rospublisher('/stickCmd', 'terpcopter_msgs/stickCmd');
@@ -44,6 +49,7 @@ ti = rostime('now');
 t0 = [];
 abs_t = double(ti.Sec)+double(ti.Nsec)*10^-9;
 if isempty(t0), t0 = abs_t; end
+prevTime = abs_t;
 
 % initialize messages to publish
 stickCmdMsg = rosmessage(stickCmdPublisher);
@@ -103,11 +109,31 @@ while(1)
     % get latest messages
     stateEstimateMsg = stateEstimateSubscriber.LatestMessage;
     ayprCmdMsg = ayprCmdSubscriber.LatestMessage;
+    localPositionOdomMsg = localPositionOdomSubscriber.LatestMessage;
     
     % unpack state estimate
     x = stateEstimateMsg.East;
     y = stateEstimateMsg.North;
     z = stateEstimateMsg.Up;
+    % x = localPositionOdomMsg.Pose.Pose.Position.X;
+    % y = localPositionOdomMsg.Pose.Pose.Position.Y;
+    % z = localPositionOdomMsg.Pose.Pose.Position.Z;
+    v_x = localPositionOdomMsg.Twist.Twist.Linear.X;
+    v_y = localPositionOdomMsg.Twist.Twist.Linear.Y;
+    v_z = localPositionOdomMsg.Twist.Twist.Linear.Z;
+
+    localOrientationX = localPositionOdomMsg.Pose.Pose.Orientation.X;
+    localOrientationY = localPositionOdomMsg.Pose.Pose.Orientation.Y;
+    localOrientationZ = localPositionOdomMsg.Pose.Pose.Orientation.Z;
+    localOrientationW = localPositionOdomMsg.Pose.Pose.Orientation.W;
+    q = [localOrientationW localOrientationX localOrientationY localOrientationZ];
+
+    % localPositionEuler = quat2eul([localOrientationW localOrientationX localOrientationY localOrientationZ]);
+
+    % yawDeg = rad2deg(localPositionEuler(1));
+    % pitchDeg = rad2deg(localPositionEuler(2));
+    % rollDeg = rad2deg(localPositionEuler(3));
+
     pitchDeg = stateEstimateMsg.Pitch; 
     yawDeg = stateEstimateMsg.Yaw;
     rollDeg = stateEstimateMsg.Roll;
@@ -127,61 +153,64 @@ while(1)
     abs_t = double(ti.Sec)+double(ti.Nsec)*10^-9;
     t = abs_t-t0;
     
-    % altitude control
-    if ( ayprCmdMsg.AltSwitch==1 )
-        [u_alt, altControl] = altModeController(altControl, t, z, z_d);
-    else
-        u_alt = 0;
-    end
+%     % altitude control
+%     if ( ayprCmdMsg.AltSwitch==1 )
+%         [u_alt, altControl] = altModeController(altControl, t, z, z_d);
+%     else
+%         u_alt = 0;
+%     end
     
-    if( ayprCmdMsg.WaypointSwitch == 0 )
+%     if( ayprCmdMsg.WaypointSwitch == 0 )
         
-        % yaw control
-        if ( ayprCmdMsg.YawSwitch==1 )
-            [u_yaw, yawControl] = yawController(yawControl, t, yawDeg, yaw_d);
-        else
-            u_yaw = 0;
-        end
+%         % yaw control
+%         if ( ayprCmdMsg.YawSwitch==1 )
+%             [u_yaw, yawControl] = yawController(yawControl, t, yawDeg, yaw_d);
+%         else
+%             u_yaw = 0;
+%         end
         
-        % pitch control
-        if ( ayprCmdMsg.PitchSwitch==1 )
-            %[u_pitch, pitchControl] = pitchController(pitchControl, t, pitchDeg, pitch_d);
-%             [pitchStickCmd, velPitchControl] = pitchVelocityPID(velPitchControl, vy_d, vy);
-            u_pitch = pitch_d;
-        else
-            u_pitch = 0;
-        end
+%         % pitch control
+%         if ( ayprCmdMsg.PitchSwitch==1 )
+%             %[u_pitch, pitchControl] = pitchController(pitchControl, t, pitchDeg, pitch_d);
+% %             [pitchStickCmd, velPitchControl] = pitchVelocityPID(velPitchControl, vy_d, vy);
+%             u_pitch = pitch_d;
+%         else
+%             u_pitch = 0;
+%         end
         
-        % roll control
-        if ( ayprCmdMsg.RollSwitch==1 )
-            %[u_roll, rollControl] = rollController(rollControl, t, rollDeg, roll_d);
-%             [rollStickCmd, velRollControl] = rollVelocityPID(velRollControl, vx_d, vx);
-            u_roll = roll_d;
-        else
-            u_roll = 0;
-        end
-    elseif ( ayprCmdMsg.WaypointSwitch == 1 )
-        % Possible Switch Statement waypointPointOnly, crabOnly, hybrid 
+%         % roll control
+%         if ( ayprCmdMsg.RollSwitch==1 )
+%             %[u_roll, rollControl] = rollController(rollControl, t, rollDeg, roll_d);
+% %             [rollStickCmd, velRollControl] = rollVelocityPID(velRollControl, vx_d, vx);
+%             u_roll = roll_d;
+%         else
+%             u_roll = 0;
+%         end
+%     elseif ( ayprCmdMsg.WaypointSwitch == 1 )
+%         % Possible Switch Statement waypointPointOnly, crabOnly, hybrid 
+%         [u_yaw, u_pitch, u_roll, u_alt] = PIDcontroller(t, yawDeg, x_d, x, y_d, y, v_x, v_y, z_d, z, v_z)
         
+% %         [u_yaw, u_pitch, u_roll,yawControl,pitchControl, rollControl] = VelocityPID(yawControl,pitchControl, rollControl, t, yawDeg, x_d, x, y_d, y);
         
-%         [u_yaw, u_pitch, u_roll,yawControl,pitchControl, rollControl] = VelocityPID(yawControl,pitchControl, rollControl, t, yawDeg, x_d, x, y_d, y);
+%         %[u_yaw, u_pitch, u_roll, yawControl] = waypointPointAndMoveForwardController(yawControl, t, yawDeg, x_d, x, y_d, y);
+%          [u_yaw, u_pitch, u_roll] = waypointForwardCrabController(t, yawDeg, x_d, x, y_d, y, v_x, v_y);
+%         %[u_yaw, u_pitch, u_roll, u_alt] = waypoint3DController(t, yawDeg, x_d, x, y_d, y, z_d, z);
+%         %[u_yaw, u_pitch, u_roll, yawControl] = waypointHybridController(yawControl, t, yawDeg, x_d, x, y_d, y);
         
-        %[u_yaw, u_pitch, u_roll, yawControl] = waypointPointAndMoveForwardController(yawControl, t, yawDeg, x_d, x, y_d, y);
-         [u_yaw, u_pitch, u_roll] = waypointForwardCrabController(t, yawDeg, x_d, x, y_d, y);
-        %[u_yaw, u_pitch, u_roll, u_alt] = waypoint3DController(t, yawDeg, x_d, x, y_d, y, z_d, z);
-        %[u_yaw, u_pitch, u_roll, yawControl] = waypointHybridController(yawControl, t, yawDeg, x_d, x, y_d, y);
-        
-        % Note: Previous waypoint controls. Should be kept until
-        % waypointPointAndMoveForwardController,
-        % waypointForwardCrabController, and waypointHybrid
-        % Controller are tested. 
-        % [u_yaw, u_pitch, u_roll,yawControl] = waypointController(yawControl, t, yawDeg, x_d, x, y_d, y);
-        % [u_yaw, u_pitch, u_roll,yawControl,pitchControl, rollControl] = waypointController2(yawControl,pitchControl, rollControl, t, yawDeg, x_d, x, y_d, y);
-    else
-        u_yaw = 0;
-        u_pitch = 0;
-        u_roll = 0;
-    end
+%         % Note: Previous waypoint controls. Should be kept until
+%         % waypointPointAndMoveForwardController,
+%         % waypointForwardCrabController, and waypointHybrid
+%         % Controller are tested. 
+%         % [u_yaw, u_pitch, u_roll,yawControl] = waypointController(yawControl, t, yawDeg, x_d, x, y_d, y);
+%         % [u_yaw, u_pitch, u_roll,yawControl,pitchControl, rollControl] = waypointController2(yawControl,pitchControl, rollControl, t, yawDeg, x_d, x, y_d, y);
+%     else
+%         u_yaw = 0;
+%         u_pitch = 0;
+%         u_roll = 0;
+%     end
+
+    [u_yaw, u_pitch, u_roll, u_alt] = PIDcontroller(t, yaw_d, yawDeg, x_d, x, y_d, y, v_x, v_y, z_d, z, v_z, q);
+
     % publish
     stickCmdMsg.Thrust = u_alt;
     stickCmdMsg.Yaw = u_yaw;
@@ -189,7 +218,7 @@ while(1)
     stickCmdMsg.Roll = u_roll;
     
     % send stick commands
-    fprintf('Stick Cmd.Thrust : %3.3f, Stick Cmd.Pitch: %3.3f, Stick Cmd.Roll: %3.3f, Altitude : %3.3f, Altitude_SP : %3.3f, Error : %3.3f \n', stickCmdMsg.Thrust, stickCmdMsg.Pitch, stickCmdMsg.Roll , stateEstimateMsg.Up, z_d, ( z - z_d ) );
+    fprintf('Stick Cmd.Thrust : %3.3f, Stick Cmd.Pitch: %3.3f, Stick Cmd.Roll: %3.3f, Stick Cmd.yaw : %3.3f\n', stickCmdMsg.Thrust, stickCmdMsg.Pitch, stickCmdMsg.Roll , stickCmdMsg.Yaw );
     send(stickCmdPublisher, stickCmdMsg);
     waitfor(r);
 end

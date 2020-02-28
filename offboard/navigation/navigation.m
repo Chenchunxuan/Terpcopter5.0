@@ -315,6 +315,9 @@ while(1)
     localOrientationZ = localPositionOdomMsg.Pose.Pose.Orientation.Z;
     localOrientationW = localPositionOdomMsg.Pose.Pose.Orientation.W;
     
+%     stateMsg.Quat = [localOrientationX;localOrientationY;localOrientationZ;localOrienationW];
+%     stateMsg.Transform = quat2dcm([[stateMsg.Quat;[0,0,0]],[localPositionX;localPositionY;localPositionZ;1]])
+    
     localPositionEuler = quat2eul([localOrientationW localOrientationX localOrientationY localOrientationZ]);
     
     localPositionPsi = rad2deg(localPositionEuler(1));
@@ -326,9 +329,9 @@ while(1)
     localPositionTwistLinearVelocityY = localPositionOdomMsg.Twist.Twist.Linear.Y;
     localPositionTwistLinearVelocityZ = localPositionOdomMsg.Twist.Twist.Linear.Z;
     
-    %     stateMsg.xVelocity = localPositionTwistLinearVelocityX;
-    %     stateMsg.yVelocity = localPositionTwistLinearVelocityY;
-    %     stateMsg.zVelocity = localPositionTwistLinearVelocityZ;
+%     stateMsg.xVelocity = localPositionTwistLinearVelocityX;
+%     stateMsg.yVelocity = localPositionTwistLinearVelocityY;
+%     stateMsg.zVelocity = localPositionTwistLinearVelocityZ;
     
     localPositionTwistAngularVelocityX = localPositionOdomMsg.Twist.Twist.Angular.X;
     localPositionTwistAngularVelocityY = localPositionOdomMsg.Twist.Twist.Angular.Y;

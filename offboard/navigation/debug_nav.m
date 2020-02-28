@@ -178,7 +178,7 @@ while(1)
     state.psi_inertial = mod(90-rad2deg(euler(1)),360);
     state.theta = -rad2deg(euler(2));
     state.phi = rad2deg(euler(3));
-    
+    state.quat = [x;y;z;w];
     %state.psi_inertial = round(state.psi_inertial,1);
     
     %get relative yaw = - inertial yaw_intial - inertial yaw
@@ -198,6 +198,7 @@ while(1)
     stateMsg.Yaw = state.psi_relative;
     stateMsg.Roll = state.phi;
     stateMsg.Pitch = state.theta;
+    stateMsg.Quat = state.quat;
     %% Lidar smoothing
     
     %% VIO Odometry

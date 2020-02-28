@@ -449,7 +449,7 @@ X = fread(fid) ;
 fclose(fid) ;
 X = char(X.') ; 
 S1='ROS_MASTER_URI=http://192.168.1.93:11311';
-S2='ROS_MASTER_URI=http://192.168.1.3:11311';
+S2='ROS_MASTER_URI=http://192.168.1.108:11311';
 Y = strrep(X, S1, S2) ;
 % replace string S1 with string S2
 fid2 = fopen('~/.bashrc','wt') ;

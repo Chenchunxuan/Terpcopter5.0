@@ -1,0 +1,4 @@
+#!/usr/bin/expect
+
+spawn matlab -nodesktop -nosplash -r "run('../navigation/navigation')"
+interact

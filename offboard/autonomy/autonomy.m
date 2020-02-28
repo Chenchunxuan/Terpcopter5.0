@@ -49,13 +49,24 @@ if ( keyStrokeFlag )
     set(gcf, 'Position',  [100, 100, 500, 500])
     title('Keystroke Capture','FontSize',16);
 end
+
+
+%% Flag for detecting april tags
+detect_artag = 0;
+use_ctrl = 0;
+%%
+
+
 % Competition Missions
 % mission = loadMission_Comp_takeoffHoverPointLand();
 
 
+
 % Cypress Missions
 % missions
-% mission = loadMission_takeoffHoverLand();
+ mission = loadMission_takeoffHoverLand();
+ % mission = loadMission_takeoffHover();
+% mission = loadMission_testhoverArtag();
 % mission = loadMission_takeoffHoverDropPackageLand();
 % mission = loadMission_takeoffHoverFlyForwardLand();
 % mission = loadMission_takeoffHoverFlyForwardProbeLand();
@@ -71,11 +82,12 @@ end
 % mission = loadMission_CompetitionTakeoffHoverPointLand();
 % mission = loadMission_CompetitionTakeoffHoverPointRiverLand();
 % mission = loadMission_StayOverHAlign();
-mission = loadMission_takeoffHoverWaypointLand();
+% mission = loadMission_takeoffHoverWaypointLand();
 % mission = loadMission_takeoffHoverWaypointSquareLand();
 % mission = loadMission_takeoffHoverWaypointStarLand();
 % mission = loadMission_followCSVWaypoints(); %Doesn't work
 % mission = loadMission_CSVTest()
+% mission = loadMission_takeoffHoverOverARTag()
 
 fprintf('Launching Autonomy Node...\n');
 
@@ -93,6 +105,7 @@ controlStartPublisher = rospublisher('/startControl', 'std_msgs/Bool');
 imuDataSubscriber = rossubscriber('/mavros/imu/data');
 fprintf('Setting up servoSwitch Publisher ...\n');
 servoSwitchCmdPublisher = rospublisher('/servoSwitch', 'terpcopter_msgs/servoSwitchCmd');
+tagGlobalPosPublisher = rospublisher('/artagpos','terpcopter_msgs/globaltagpos')
 
 % initialize control off
 controlStartMsg = rosmessage('std_msgs/Bool');
@@ -102,6 +115,8 @@ send(controlStartPublisher, controlStartMsg);
 % Subscribers
 fprintf('Subscribing to stateEstimate ...\n');
 stateEstimateSubscriber = rossubscriber('/stateEstimate');
+
+localPositionOdomSubscriber = rossubscriber('/mavros/local_position/odom', 'nav_msgs/Odometry');
 
 % vision-based subscribers depend on mission
 if ( mission.config.R_detector )
@@ -130,6 +145,13 @@ if ( mission.config.flowProbe )
     flowProbeDataSubscriber = rossubscriber('/terpcopter_flow_probe_node/flowProbe');
 end
 
+% subscriber for april tag
+if detect_artag
+    ARTagSubscriber = rossubscriber('/tag_detections', 'apriltag_ros/AprilTagDetectionArray');
+    % [GlobalTagPose] = default_tag_msg();
+    GlobalTagPose = rosmessage(tagGlobalPosPublisher);
+    % class(GlobalTagPose)
+end
 
 
 
@@ -137,9 +159,12 @@ pause(0.1)
 
 % Unpacking Initial ROS Messages
 [ayprCmdMsg] = default_aypr_msg();
+% class(ayprCmdMsg)
 % servo switch 'false' = closed servo
 servoSwitchMsg = rosmessage(servoSwitchCmdPublisher);
 servoSwitchMsg.Servo = -1;
+
+
 
 % initial variables
 stick_thrust = -1;
@@ -185,11 +210,21 @@ if ( strcmp(params.auto.mode,'auto'))
     % run control once start button is pressed
     controlStartMsg.Data = 1;
     send(controlStartPublisher , controlStartMsg);
+    
+    
     while(1)
         
         % get latest messages
         stateEstimateMsg = stateEstimateSubscriber.LatestMessage;
+        localPositionOdomMsg = localPositionOdomSubscriber.LatestMessage;
+
         imuMsg = imuDataSubscriber.LatestMessage;
+        if detect_artag
+            ARTagMsg = ARTagSubscriber.LatestMessage
+        end
+        
+        
+        
         if ( mission.config.R_detector )
             try
                 rDetected = rDetectedSub.LatestMessage.Data
@@ -264,7 +299,7 @@ if ( strcmp(params.auto.mode,'auto'))
         fprintf('Current Behavior: %s\tTime Spent in Behavior: %f\t Total Time of Mission: %f \n\n',name,bhvTime,totalTime);
         
         % if behavior completes pop behavior
-        if flag == true
+        if (flag == true)
             [mission.bhv] = pop(mission.bhv, t);
             currentBehavior = currentBehavior + 1;
             disp('*************************')
@@ -283,7 +318,7 @@ if ( strcmp(params.auto.mode,'auto'))
                     completionFlag = bhv_hover_fixed_orient(stateEstimateMsg, ayprCmd, completion, t);
                 case 'bhv_hover_over_H'
                     % this function is only for testing/logging data and
-                    % does not currently affect hover_over_h behavior
+                    % does n currently affect hover_over_h behavior
                     %[hPixelFilt, yPixelFilt] = Hfilter(stateEstimateMsg, imuMsg, bhvTime, hDetected, hAngle, hPixelX, hPixelY, hfilterLog);
                     % behavior
                     [completionFlag, ayprCmd] = bhv_hover_over_H(stateEstimateMsg, ayprCmd, completion, bhvTime, hDetected, hAngle, hPixelX, hPixelY, bhvLog);
@@ -308,18 +343,29 @@ if ( strcmp(params.auto.mode,'auto'))
                 case 'bhv_fly_forward_until_target'
                     completionFlag = bhv_fly_forward_until_target(completion, bhvTime, targetDet);
                 case 'bhv_waypoint'
-                    completionFlag = bhv_waypoint(stateEstimateMsg, ayprCmd, completion, t);
+                    completionFlag = bhv_waypoint(stateEstimateMsg, localPositionOdomMsg, ayprCmd, completion, t);
+                    disp('FFFFFFFFFFFFFFFFFFF');
                 case 'bhv_land'
                     completionFlag = bhv_land(completion, bhvTime);
                 case 'bhv_FollowCSVWaypoints'
-                    [completionFlag,ayprCmd] = bhv_FollowCSVWaypoints(stateEstimateMsg,ayprCmd,completion,t);
+                    [completionFlag, ayprCmd] = bhv_FollowCSVWaypoints(stateEstimateMsg,ayprCmd,completion,t);
                 case 'bhv_CSVTest'
                     [completionFlag, ayprCmd] = bhv_CSVTest(stateEstimateMsg, ayprCmd, completion, t);
+                case 'bhv_hover_over_artag'
+                    [completionFlag, ayprCmd] = bhv_hover_over_ar_tag(stateEstimateMsg, bhvTime, completion, ayprCmd, ARTagMsg, use_ctrl);
+                case 'bhv_artag_waypoint' 
+                	 
+                    [completionFlag, GlobalTagPose] = transform(stateEstimateMsg,ARTagMsg, GlobalTagPose);
+                     % class(GlobalTagPose)
+%                     ayprCmd.WaypointXDesiredMeters = EKFoutput.LatestMessage.x;
+%                     ayprCmd.WaypointYDesiredMeters = EKFoutput.LatestMessage.y;
+%                     ayprCmd.AltDesiredMeters       = 1.5 %% fixed height to hover over the tag;
+%                     completionFlag = bhv_waypoint(stateEstimateMsg, ayprCmd, completion, t);
                 otherwise
             end
             mission.bhv{1}.completion.status = completionFlag;
+            %mission.bhv{1}.ayprCmd = ayprCmd;
         end
-        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %         if (mission.config.Liveplot_firstloop == 0)
 %             for (i=1:mission.config.FinalWaypoint)
@@ -350,11 +396,15 @@ if ( strcmp(params.auto.mode,'auto'))
             disp('          Mission Complete');
             disp('=====================================');
         else
-            ayprCmdMsg = mission.bhv{1}.ayprCmd;
+            ayprCmdMsg = mission.bhv{1}.ayprCmd
             send(ayprCmdPublisher, ayprCmdMsg);
             servoSwitchMsg.Servo = servoCmd;
             send(servoSwitchCmdPublisher, servoSwitchMsg);
-            fprintf('Published Ahs Cmd. Alt : %3.3f \t Yaw: %3.3f\n', ayprCmdMsg.AltDesiredMeters, ayprCmdMsg.YawDesiredDegrees);
+            if detect_artag
+            	send(tagGlobalPosPublisher, GlobalTagPose);
+            end	
+            fprintf('Published Ahs Cmd. Alt : %3.3f \t Yaw: %3.3f \t Pitch: %3.3f \t Roll: %3.3f \n', ayprCmdMsg.AltDesiredMeters, ayprCmdMsg.YawDesiredDegrees, ayprCmdMsg.PitchDesiredDegrees, ayprCmdMsg.RollDesiredDegrees);
+            
         end
         
         if ( logFlag )

@@ -1,17 +1,28 @@
-function completionFlag = bhv_waypoint(stateEstimateMsg, ayprCmd, completion, t )
+function completionFlag = bhv_waypoint(stateEstimateMsg, localPositionOdomMsg, ayprCmd, completion, t )
     global timestamps
-    toleranceMeters = 1.5; %0.25;
     
-    waypointXComplete = abs(ayprCmd.WaypointXDesiredMeters - stateEstimateMsg.East) <= toleranceMeters;
-    waypointYComplete = abs(ayprCmd.WaypointYDesiredMeters - stateEstimateMsg.North) <= toleranceMeters;
-    hoverAltComplete = abs(ayprCmd.AltDesiredMeters - stateEstimateMsg.Up) <= toleranceMeters;
+    tolerance_P = 0.07; % meters
+    tolerance_V = 0.1; % meters
+    
+    error_p = [ ayprCmd.WaypointXDesiredMeters - stateEstimateMsg.East;
+                ayprCmd.WaypointYDesiredMeters - stateEstimateMsg.North;
+                ayprCmd.AltDesiredMeters - stateEstimateMsg.Up;];
+
+    error_v = [ 0 - localPositionOdomMsg.Twist.Twist.Linear.X;
+                0 - localPositionOdomMsg.Twist.Twist.Linear.Y;
+                0 - localPositionOdomMsg.Twist.Twist.Linear.Z];  
+
+    waypoint_pos_complete = norm(error_p) <= tolerance_P;
+    waypoint_vel_complete = norm(error_v) <= tolerance_V;
+    % waypointYComplete = abs(ayprCmd.WaypointYDesiredMeters - stateEstimateMsg.North) <= toleranceMeters;
+    % hoverAltComplete = abs(ayprCmd.AltDesiredMeters - stateEstimateMsg.Up) <= toleranceMeters;
     % fprintf('Task: Hover at %f meters for %f seconds\n', ahs.desiredAltMeters, completion.durationSec);
     
-    if hoverAltComplete && waypointXComplete && waypointYComplete
-        disp('position hold satisfied');
+    if waypoint_pos_complete && waypoint_vel_complete
+        disp('position and velocity hold satisfied');
         current_event_time = t; % reset time for which altitude is satisfied
     else
-        disp('position hold not satisfied');
+        disp('position and velocity hold not satisfied');
         current_event_time = t;
         timestamps.behavior_satisfied_timestamp = t;
     end

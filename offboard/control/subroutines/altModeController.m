@@ -23,16 +23,19 @@ altFilt = (1-alpha_a)*prevAlt + alpha_a*zcur;
 altError = zd - altFilt;
 
 % reset setpoint
-if ( abs(setpointVal - zd) > setpointDeadband && setpointReached == 1 )
-   setpointReached = 0;   
-   disp('New Setpoint');
-end
+% disp(setpointVal)
+% disp(zd)
+% disp(abs(setpointVal - zd))
+% if ( abs(setpointVal - zd) > setpointDeadband && setpointReached == 1 )
+%    setpointReached = 0;   
+%    disp('New Setpoint');
+% end
 
 % bang-bang control
 if ( abs(altError) <= setpointDeadband && setpointReached == 0) % triggers the setpointReached
    altRateCmd = 0;
-   setpointReached = 1;
-   setpointVal = altFilt;
+%setpointReached = 1;
+%   setpointVal = altFilt;
    disp('Reached Setpoint')
 elseif (altError > setpointDeadband && setpointReached == 0 ) % if it hasn't reached the setpoint and must climb
     altRateCmd = climbRateCmd;
@@ -45,6 +48,7 @@ else
    disp('Holding Setpoint')   
 end
 
+disp(setpointReached)
 
 %% pack up structure
 altControl.lastTime = curTime;
