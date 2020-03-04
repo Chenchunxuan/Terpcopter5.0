@@ -3,6 +3,9 @@ function [Yaw_rate, pitch, roll, Thrust] = PIDcontroller(curTime, yaw_d, yawDeg,
 global prevTime x_error_int y_error_int
 
 % gains/parameters
+% Kp = -1.0;
+% Kv = 0.0;
+% Ki = 0.0;
 Kp = 0.25;
 Kv = 0.15;
 Ki = 0.15;

@@ -64,7 +64,8 @@ use_ctrl = 0;
 
 % Cypress Missions
 % missions
- mission = loadMission_takeoffHoverLand();
+mission = testMission();
+%mission = loadMission_takeoffHoverLand();
  % mission = loadMission_takeoffHover();
 % mission = loadMission_testhoverArtag();
 % mission = loadMission_takeoffHoverDropPackageLand();
